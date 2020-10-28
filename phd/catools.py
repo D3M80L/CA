@@ -55,6 +55,25 @@ def acca2dVonNeumannLocalRule(lut:np.ndarray, x:decimal, y:decimal, z:decimal, u
 
     return result
 
+def acca1dLocalRule(lut: np.ndarray, x: decimal, y:decimal, z:decimal):
+    mx = 1 - x
+    my = 1 - y
+    mz = 1 - z
+
+    result = lut[0] * mx * my * mz
+    result += lut[1] * mx * my *  z
+    result += lut[2] * mx *  y * mz
+    result += lut[3] * mx *  y *  z
+    result += lut[4] *  x * my * mz
+    result += lut[5] *  x * my *  z
+    result += lut[6] *  x *  y * mz
+    result += lut[7] *  x *  y *  z
+
+    if (result > 1):
+        return 1
+
+    return result
+
 def applyAcca2dVonNeumannRule(lut:np.ndarray, inputConfiguration:np.ndarray, outputConfiguration:np.ndarray, X:int, Y:int):
     for y in range(Y):
         top = (y + Y - 1) % Y * X
@@ -69,6 +88,47 @@ def applyAcca2dVonNeumannRule(lut:np.ndarray, inputConfiguration:np.ndarray, out
                 inputConfiguration[center + (x + 1) % X], # right
                 inputConfiguration[bottom + x])
 
+
+def applyAcca1dRule(lut:np.ndarray, inputConfiguration:np.ndarray, outputConfiguration:np.ndarray, X:int):
+    for centerIndex in range(X):
+        leftIndex = (X + centerIndex - 1) % X
+        rightIndex = (centerIndex + 1) % X
+
+        result = acca1dLocalRule(lut, inputConfiguration[leftIndex], inputConfiguration[centerIndex], inputConfiguration[rightIndex])
+
+        outputConfiguration[centerIndex] = result
+
+def iterate_1dconfiguration(I:np.ndarray, lut: np.ndarray):
+    I1 = I.copy()
+    I2 = I.copy()
+    X = I.shape[0]
+
+    while True:
+        yield I1.copy()
+        applyAcca1dRule(lut, I1, I2, X)
+        tmp = I2
+        I2 = I1
+        I1 = tmp
+
+def iterate_1dconfiguration_to(I:np.ndarray, lut: np.ndarray, T: int):
+    iteration = iterate_1dconfiguration(I, lut)
+
+    for _ in range(T):
+        yield next(iteration)
+
+def plot_timespatial(I: np.ndarray, ax = None):
+    if (not ax):
+        ax = plt.subplot(111)
+    
+    I = np.array(I)
+    ax.imshow(I.astype(float), cmap='Blues', vmin=0, vmax=1)
+    ax.xaxis.set_ticklabels([])
+    ax.yaxis.set_ticklabels([])
+    plt.tick_params(axis='both', left='off', top='off', right='off', bottom='off', labelleft='off', labeltop='off', labelright='off', labelbottom='off', width=0)
+    # draw gridlines
+    #ax.grid(which='major', axis='both', linestyle='-', color='k', linewidth=1)
+    ax.set_xticks([])
+    ax.set_yticks([])
 
 def iterate_configuration(I:np.ndarray, lut: np.ndarray):
     I1 = I.copy().flatten()
@@ -88,6 +148,10 @@ def iterate_configuration_to(I:np.ndarray, lut: np.ndarray, T: int):
 
     for t in range(T):
         yield next(iteration)
+
+def parse_1d_configuration(configuration:str):
+    result = [int(x) for x in configuration.split(";")]
+    return np.array(result, np.dtype(decimal.Decimal))
 
 def parse_2d_configuration(configuration:str, x: int,  y: int):
     result = [int(x) for x in configuration.split(";")]
@@ -120,35 +184,3 @@ def animate_iterate_configuration_to(configuration:np.ndarray, lut: np.ndarray, 
         
     return HTML(animation.FuncAnimation(fig, animate, frames=T, interval=200, blit=False).to_jshtml())
 
-
-# def animate_iterate_configuration_to(configuration: np.ndarray, lut: np.ndarray, T: int):
-#     return HTML(plot_iterate_configuration_to(configuration, lut, T).to_jshtml())
-
-# Ip = [int(x) for x in "1;1;1;1;0;0;1;0;0".split(";")]
-# I = np.array(Ip, np.dtype(decimal.Decimal)).reshape(3,3)
-
-# lut = [0.0694483294696466,0.0205768632252970,0.3936142824964936,0.0324256239840529,0.6413351118370271,0.3420886711599403,1.0000000000000000,0.0390656643647346,0.3323542788090380,0.5145222195645875,0.9337041925574603,0.4083933032081399,0.5558771701745073,0.3256708833263801,0.9996975188577638,0.0061853565507727,0.3477703425016097,0.0318818957581097,0.9516210370447654,0.0439863261339373,0.0098972290556301,0.8140427796400955,0.9974848794610039,0.0058144746957105,0.9227795261776912,0.9402703718388361,0.9353010574907661,0.2382834336453912,0.9878185427694743,0.9307289703828943]
-# lut = np.array(lut, dtype=np.dtype(decimal.Decimal))
-
-
-# for c in iterate_configuration_maxto(I, lut, 30):
-#     print (c)
-
-# I1 = np.array(Ip, dtype=np.dtype(decimal.Decimal))
-# I2 = I1.copy()
-
-# lut = [0.0694483294696466,0.0205768632252970,0.3936142824964936,0.0324256239840529,0.6413351118370271,0.3420886711599403,1.0000000000000000,0.0390656643647346,0.3323542788090380,0.5145222195645875,0.9337041925574603,0.4083933032081399,0.5558771701745073,0.3256708833263801,0.9996975188577638,0.0061853565507727,0.3477703425016097,0.0318818957581097,0.9516210370447654,0.0439863261339373,0.0098972290556301,0.8140427796400955,0.9974848794610039,0.0058144746957105,0.9227795261776912,0.9402703718388361,0.9353010574907661,0.2382834336453912,0.9878185427694743,0.9307289703828943]
-# np.array(lut, dtype=np.dtype(decimal.Decimal))
-
-
-#for configuration in 
-# print (np.mean(I1))
-# for t in range(60):
-#     applyAcca2dVonNeumannRule(lut, I1, I2, 3, 3)
-#     tmp = I2
-#     I2 = I1
-#     I1 = tmp
-
-# minValue = min(I1)
-# maxValue = max(I1)
-# print (f"{minValue:.30f},{maxValue:.30f}")
