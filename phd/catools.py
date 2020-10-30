@@ -184,3 +184,44 @@ def animate_iterate_configuration_to(configuration:np.ndarray, lut: np.ndarray, 
         
     return HTML(animation.FuncAnimation(fig, animate, frames=T, interval=200, blit=False).to_jshtml())
 
+
+def plot_polar_configuration(configuration: np.ndarray, ax = None):
+    if (not ax):
+        ax = plt.subplot(111, projection='polar')
+    
+    N = len(configuration)
+    
+    theta = np.linspace(0, 1, num=N+1) * 2*np.pi
+    I = np.zeros(N+1)
+    I[:N] = configuration[:N]
+    I[N] = configuration[0]
+
+    ax.cla()
+    ax.set_rorigin(-.1)
+    ax.set_rmax(1)
+    ax.set_rticks([0.5, 1])
+    ax.grid(True)
+    p = 360 / 10
+    ax.set_thetagrids(np.arange(0,360,p))
+    ax.set_xticklabels([])
+    ax.set_ylim([0,1])
+    ax.spines['polar'].set_visible(False)
+    ax.plot(theta, I)
+        
+    return ax
+
+def animate_iterate_polar_configuration_to(configuration:np.ndarray, lut: np.ndarray, T: int):
+    fig = plt.figure()
+    ax = plt.subplot(111, projection='polar')
+
+    timespatial = list(iterate_1dconfiguration_to(configuration, lut, T))
+        
+    def animate(t):
+        ax.set_title(f't={t}, $\\rho$={np.mean(timespatial[t]):f}, min={np.min(timespatial[t]):f}, max={np.max(timespatial[t]):f}')
+        plot_polar_configuration(timespatial[t], ax=ax)
+        plt.close()
+        
+    return HTML(animation.FuncAnimation(fig, animate, frames=T, interval=200, blit=False).to_jshtml())
+
+def outer_totalistic_acca_lut(a:decimal, b:decimal, c:decimal, d:decimal):
+    return np.array([a, b, c, d, b, 2*b-a, d, 2*d-c])
