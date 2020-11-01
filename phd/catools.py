@@ -92,21 +92,16 @@ def applyAcca2dVonNeumannRule(lut: np.ndarray, inputConfiguration: np.ndarray, o
                                                                         # center
                                                                         inputConfiguration[center + x],
                                                                         # right
-                                                                        inputConfiguration[center + (
-                                                                            x + 1) % X],
+                                                                        inputConfiguration[center + (x + 1) % X],
                                                                         inputConfiguration[bottom + x])
-
-
 def applyAcca1dRule(lut: np.ndarray, inputConfiguration: np.ndarray, outputConfiguration: np.ndarray, X: int):
     for centerIndex in range(X):
         leftIndex = (X + centerIndex - 1) % X
         rightIndex = (centerIndex + 1) % X
 
-        result = acca1dLocalRule(
-            lut, inputConfiguration[leftIndex], inputConfiguration[centerIndex], inputConfiguration[rightIndex])
+        result = acca1dLocalRule(lut, inputConfiguration[leftIndex], inputConfiguration[centerIndex], inputConfiguration[rightIndex])
 
         outputConfiguration[centerIndex] = result
-
 
 def iterate_1dconfiguration(I: np.ndarray, lut: np.ndarray):
     I1 = I.copy()
@@ -119,7 +114,6 @@ def iterate_1dconfiguration(I: np.ndarray, lut: np.ndarray):
         tmp = I2
         I2 = I1
         I1 = tmp
-
 
 def iterate_1dconfiguration_to(I: np.ndarray, lut: np.ndarray, T: int):
     iteration = iterate_1dconfiguration(I, lut)
@@ -156,7 +150,6 @@ def iterate_configuration(I: np.ndarray, lut: np.ndarray):
         tmp = I2
         I2 = I1
         I1 = tmp
-
 
 def iterate_configuration_to(I: np.ndarray, lut: np.ndarray, T: int):
     iteration = iterate_configuration(I, lut)
@@ -207,7 +200,6 @@ def animate_iterate_configuration_to(configuration: np.ndarray, lut: np.ndarray,
         plt.close()
 
     return HTML(animation.FuncAnimation(fig, animate, frames=T, interval=200, blit=False).to_jshtml())
-
 
 def plot_polar_configuration(configuration: np.ndarray, ax=None):
     if (not ax):
@@ -286,4 +278,4 @@ def density_conserving_2d_lut(a, b, c, d, e, f, g, h) -> np.ndarray:
                        1+2*a + b - c + d - e + g - h])
 
 def diffusion_2d_lut() -> np.ndarray:
-    return density_conserving_2d_lut(a=1/5, b=1/5, c=2/5, d=1/5, e=1/5, f=2/5, g=1/5, h=2/5)
+    return density_conserving_2d_lut(a=1/5, b=1/5, c=2/5, d=1/5, e=2/5, f=2/5, g=1/5, h=2/5)
