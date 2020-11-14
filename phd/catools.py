@@ -185,6 +185,37 @@ def plot_configuration(configuration: np.ndarray, ax=None):
     ax.set_xticks(np.arange(-.5, X, 1))
     ax.set_yticks(np.arange(-.5, Y, 1))
 
+def set_title(ax, timespatial, t):
+    min = np.min(timespatial[t])
+    max = np.max(timespatial[t])
+    minValue = float(f'{min:1.3f}')
+    maxValue = float(f'{max:1.3f}')
+
+    minEq = '='
+    if (min > minValue):
+        minEq = '>'
+    elif (min < minValue):
+        minEq = '<'
+
+    maxEq = '='
+    if (max > maxValue):
+        maxEq = '>'
+    elif (max < maxValue):
+        maxEq = '<'
+        
+    maxHalf = '=0.5'
+    if (max > 0.5):
+        maxHalf = '>0.5'
+    elif (max < 0.5):
+        maxHalf = '<0.5'
+        
+    minHalf = '=0.5'
+    if (min > 0.5):
+        minHalf = '>0.5'
+    elif (min < 0.5):
+        minHalf = '<0.5'
+
+    ax.set_title(f't={t}, $\\rho$={np.mean(timespatial[t]):f}, min{minEq}{minValue:1.3f}({minHalf}), max{maxEq}{maxValue:1.3f}({maxHalf})')
 
 def animate_iterate_configuration_to(configuration: np.ndarray, lut: np.ndarray, T: int):
     fig = plt.figure()
@@ -194,8 +225,7 @@ def animate_iterate_configuration_to(configuration: np.ndarray, lut: np.ndarray,
     timespatial = [next(iteration).copy() for t in range(T)]
 
     def animate(t):
-        ax.set_title(
-            f't={t}, $\\rho$={np.mean(timespatial[t]):f}, min={np.min(timespatial[t]):1.3f}, max={np.max(timespatial[t]):1.3f}')
+        set_title(ax, timespatial, t)
         plot_configuration(timespatial[t], ax=ax)
         plt.close()
 
@@ -234,8 +264,7 @@ def animate_iterate_polar_configuration_to(configuration: np.ndarray, lut: np.nd
     timespatial = list(iterate_1dconfiguration_to(configuration, lut, T))
 
     def animate(t):
-        ax.set_title(
-            f't={t}, $\\rho$={np.mean(timespatial[t]):f}, min={np.min(timespatial[t]):f}, max={np.max(timespatial[t]):f}')
+        set_title(ax, timespatial, t)
         plot_polar_configuration(timespatial[t], ax=ax)
         plt.close()
 
