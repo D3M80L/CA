@@ -157,7 +157,6 @@ def iterate_configuration_to(I: np.ndarray, lut: np.ndarray, T: int):
     for t in range(T):
         yield next(iteration)
 
-
 def parse_1d_configuration(configuration: str):
     result = [float(x) for x in configuration.split(";")]
     return np.array(result)
@@ -242,16 +241,16 @@ def plot_polar_configuration(configuration: np.ndarray, ax=None):
     I[:N] = configuration[:N]
     I[N] = configuration[0]
 
-    ax.cla()
     ax.set_rorigin(-.1)
     ax.set_rmax(1)
     ax.set_rticks([0.5, 1])
     ax.grid(True)
-    p = 360 / 10
+    p = 360 / N
     ax.set_thetagrids(np.arange(0, 360, p))
     ax.set_xticklabels([])
     ax.set_ylim([0, 1])
     ax.spines['polar'].set_visible(False)
+    ax.scatter(theta, I)
     ax.plot(theta, I)
 
     return ax
@@ -264,6 +263,7 @@ def animate_iterate_polar_configuration_to(configuration: np.ndarray, lut: np.nd
     timespatial = list(iterate_1dconfiguration_to(configuration, lut, T))
 
     def animate(t):
+        ax.cla()
         set_title(ax, timespatial, t)
         plot_polar_configuration(timespatial[t], ax=ax)
         plt.close()
@@ -308,3 +308,9 @@ def density_conserving_2d_lut(a, b, c, d, e, f, g, h) -> np.ndarray:
 
 def diffusion_2d_lut() -> np.ndarray:
     return density_conserving_2d_lut(a=1/5, b=1/5, c=2/5, d=1/5, e=2/5, f=2/5, g=1/5, h=2/5)
+
+def diffusion_1d_lut() -> np.ndarray:
+    return np.array([0, 1/3, 1/3, 2/3, 1/3, 2/3, 2/3, 1])
+
+def density_conserving_rotation_symmetric_2d_lut(alpha) -> np.ndarray:
+    return density_conserving_2d_lut(a=alpha, b=alpha, c=2*alpha, d=1-4*alpha, e=1-3*alpha, f=1-3*alpha, g=alpha, h=2*alpha)
