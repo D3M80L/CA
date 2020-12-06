@@ -184,9 +184,10 @@ def plot_configuration(configuration: np.ndarray, ax=None):
     ax.set_xticks(np.arange(-.5, X, 1))
     ax.set_yticks(np.arange(-.5, Y, 1))
 
-def set_title(ax, timespatial, t):
-    min = np.min(timespatial[t])
-    max = np.max(timespatial[t])
+
+def title_timespatial_default(t, configuration):
+    min = np.min(configuration)
+    max = np.max(configuration)
     minValue = float(f'{min:1.3f}')
     maxValue = float(f'{max:1.3f}')
 
@@ -212,11 +213,33 @@ def set_title(ax, timespatial, t):
     if (min > 0.5):
         minHalf = '>0.5'
     elif (min < 0.5):
-        minHalf = '<0.5'
+        minHalf = '<0.5'  
 
-    ax.set_title(f't={t}, $\\rho$={np.mean(timespatial[t]):f}, min{minEq}{minValue:1.3f}({minHalf}), max{maxEq}{maxValue:1.3f}({maxHalf})')
+    return f't={t}, $\\rho$={np.mean(configuration):1.3f}, min{minEq}{minValue:1.3f}({minHalf}), max{maxEq}{maxValue:1.3f}({maxHalf})'
 
-def animate_iterate_configuration_to(configuration: np.ndarray, lut: np.ndarray, T: int):
+def title_notify_when_threshold_reached(threshold):
+    def notify_below(t, configuration, threshold):
+        maxValue = np.max(configuration)
+        minValue = np.min(configuration)
+
+        if (maxValue <= threshold):
+            return f' threshold'
+        if (minValue >= (1 - threshold)):
+            return f' threshold'
+        return ''
+
+    return lambda t,configuration: title_timespatial_default(t, configuration) + notify_below(t, configuration, threshold)
+
+def set_title(ax, timespatial, t, title=None):
+    
+    if (title is None):
+        title = title_timespatial_default
+
+    result = title(t, timespatial[t])
+
+    ax.set_title(result)
+
+def animate_iterate_configuration_to(configuration: np.ndarray, lut: np.ndarray, T: int, title=None):
     fig = plt.figure()
     ax = plt.subplot(111)
     iteration = iterate_configuration(configuration, lut)
@@ -224,7 +247,7 @@ def animate_iterate_configuration_to(configuration: np.ndarray, lut: np.ndarray,
     timespatial = [next(iteration).copy() for t in range(T)]
 
     def animate(t):
-        set_title(ax, timespatial, t)
+        set_title(ax, timespatial, t, title=title)
         plot_configuration(timespatial[t], ax=ax)
         plt.close()
 
