@@ -1,0 +1,6 @@
+name: ca-phd
+channels:
+  - conda-forge
+dependencies:
+  - numpy
+  - matplotlib
