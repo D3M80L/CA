@@ -4,13 +4,17 @@ from matplotlib import animation
 from IPython.display import HTML
 from decimal import *
 
+dtype_float = float
+dtype_decimal = Decimal
+
+dtype = float
+
 def acca2dVonNeumannLocalRule(lut: np.ndarray, x, y, z, u, v):
-    dec1 = Decimal('1')
-    mx = dec1 - x
-    my = dec1 - y
-    mz = dec1 - z
-    mu = dec1 - u
-    mv = dec1 - v
+    mx = 1 - x
+    my = 1 - y
+    mz = 1 - z
+    mu = 1 - u
+    mv = 1 - v
 
     tmp = mx * my
     result = lut[0] * tmp * mz * mu * v
@@ -51,17 +55,13 @@ def acca2dVonNeumannLocalRule(lut: np.ndarray, x, y, z, u, v):
     result += lut[29] * tmp * z * u * mv
     result += tmp * z * u * v
 
-    if (result > dec1):
-        return dec1
-
     return result
 
 
 def acca1dLocalRule(lut: np.ndarray, x, y, z):
-    dec1 = Decimal('1')
-    mx = dec1 - x
-    my = dec1 - y
-    mz = dec1 - z
+    mx = 1 - x
+    my = 1 - y
+    mz = 1 - z
 
     result = lut[0] * mx * my * mz
     result += lut[1] * mx * my * z
@@ -71,9 +71,6 @@ def acca1dLocalRule(lut: np.ndarray, x, y, z):
     result += lut[5] * x * my * z
     result += lut[6] * x * y * mz
     result += lut[7] * x * y * z
-
-    if (result > dec1):
-        return dec1
 
     return result
 
@@ -171,12 +168,17 @@ def parse_1d_configuration(configuration: str):
     c = configuration
     if (";" in configuration):
         c = c.split(";")
-    result = [Decimal(x) for x in c]
-    return np.array(result)
 
+    if (dtype is dtype_decimal):
+        return np.array([Decimal(x) for x in c])
+    
+    return np.array([float(x) for x in c])
 
 def parse_2d_configuration(configuration: str, x: int,  y: int):
-    result = [Decimal(x) for x in configuration.split(";")]
+    if (dtype is dtype_decimal):
+        result = [Decimal(x) for x in configuration.split(";")]
+    else:
+        result = [float(x) for x in configuration.split(";")]
     return np.array(result).reshape(y, x)
 
 
@@ -312,23 +314,42 @@ def animate_iterate_polar_configuration_to(configuration: np.ndarray, lut: np.nd
 
 
 def outer_totalistic_acca_lut(a, b, c, d) -> np.ndarray:
-    a = Decimal(a)
-    b = Decimal(b)
-    c = Decimal(c)
-    d = Decimal(d)
-    dec2 = Decimal('2')
-    return np.array([a, b, c, d, Decimal(b), dec2*b-a, d, dec2*d-c])
+    if (dtype is dtype_decimal):
+        a = Decimal(a)
+        b = Decimal(b)
+        c = Decimal(c)
+        d = Decimal(d)
+    else:
+        a = float(a)
+        b = float(b)
+        c = float(c)
+        d = float(d)
+
+    return np.array([a, b, c, d, b, 2*b-a, d, 2*d-c])
 
 
 def density_conserving_2d_lut(a, b, c, d, e, f, g, h) -> np.ndarray:
-    a = Decimal(a)
-    b = Decimal(b)
-    c = Decimal(c)
-    d = Decimal(d)
-    e = Decimal(e)
-    f = Decimal(f)
-    g = Decimal(g)
-    h = Decimal(h)
+    if (dtype is dtype_decimal):
+        a = Decimal(a)
+        b = Decimal(b)
+        c = Decimal(c)
+        d = Decimal(d)
+        e = Decimal(e)
+        f = Decimal(f)
+        g = Decimal(g)
+        h = Decimal(h)
+    elif (dtype is dtype_float):
+        a = float(a)
+        b = float(b)
+        c = float(c)
+        d = float(d)
+        e = float(e)
+        f = float(f)
+        g = float(g)
+        h = float(h)
+    else:
+        raise ValueError('Unknown dtype')
+
     return np.array([a,
                      b,
                      c,
@@ -395,18 +416,17 @@ def density_conserving_rotation_symmetric_2d_lut(alpha:float) -> np.ndarray:
     ])
 
 def diffusion_2d_lut() -> np.ndarray:
-    dec5 = Decimal('5')
-    dec1 = Decimal('1')
-    dec2 = Decimal('2')
-    return density_conserving_2d_lut(a=dec1/dec5, b=dec1/dec5, c=dec2/dec5, d=dec1/dec5, e=dec2/dec5, f=dec2/dec5, g=dec1/dec5, h=dec2/dec5)
+    return density_conserving_2d_lut(a='0.2', b='0.2', c='0.4', d='0.2', e='0.4', f='0.4', g='0.2', h='0.4')
 
 
 def diffusion_1d_lut() -> np.ndarray:
-    dec0 = Decimal('0')
-    dec1 = Decimal('1')
-    dec2 = Decimal('2')
-    dec3 = Decimal('3')
-    return np.array([dec0, dec1/dec3, dec1/dec3, dec2/dec3, dec1/dec3, dec2/dec3, dec2/dec3, dec1])
+    if (dtype is dtype_decimal):
+        dec1 = Decimal('1')
+        dec2 = Decimal('2')
+        dec3 = Decimal('3')
+        return np.array([0, dec1/dec3, dec1/dec3, dec2/dec3, dec1/dec3, dec2/dec3, dec2/dec3, 1])
+
+    return np.array([0, 1/3, 1/3, 2/3, 1/3, 2/3, 2/3, 1])
 
 
 def density_conserving_rotation_symmetric_2d_lut(alpha) -> np.ndarray:
@@ -416,27 +436,50 @@ def density_conserving_rotation_symmetric_2d_lut(alpha) -> np.ndarray:
     return density_conserving_2d_lut(a=alpha, b=alpha, c=2*alpha, d=1-4*alpha, e=1-3*alpha, f=1-3*alpha, g=alpha, h=2*alpha)
 
 def density_conserving_1d_lut(a, b, c) -> np.ndarray:
-    a = Decimal(a)
-    b = Decimal(b)
-    c = Decimal(c)
-    dec0 = Decimal('0')
-    dec1 = Decimal('1')
+    if (dtype is dtype_decimal):
+        a = Decimal(a)
+        b = Decimal(b)
+        c = Decimal(c)
+    else:
+        a = float(a)
+        b = float(b)
+        c = float(c)
+
     return np.array([
-        dec0,
+        0,
         a,
         c,
-        dec1-b,
-        dec1-a-c,
-        dec1-c,
+        1-b,
+        1-a-c,
+        1-c,
         b+c,
-        dec1])
+        1])
+
+def eca_lut(eca: int) -> np.ndarray:
+    if (eca < 0 or eca > 255):
+        raise ValueError('ECA value can be only in range [0-255].')
+
+    if (dtype is dtype_decimal):
+        return [Decimal(eca >> i & 1) for i in range(8)]
+
+    return [float(eca >> i & 1) for i in range(8)]
+
+def num(a:np.ndarray) -> np.ndarray:
+    if (dtype is dtype_decimal):
+        return np.array([Decimal(x) for x in a])    
+
+    return np.array([float(x) for x in a])
 
 def truncate(x):
-    truncated = Decimal(int(x * 100000)) / Decimal(100000)
+    if (dtype is dtype_decimal):
+        truncated = Decimal(int(x * 100000)) / Decimal(100000)
+    else:
+        truncated = int(x * 100000) / 100000.0
+
     dots = ""
     if (truncated != x):
         dots = "\ldots"
-    return f"{truncated}{dots}"
+    return f"{truncated:.5g}{dots}"
 
 def display_lut(lut: np.ndarray):
     if (len(lut) == 6 or len(lut) == 30):
